@@ -1,26 +1,110 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-aiesec-blue: #037ef3;
+  --color-aiesec-navy: #0d1b3e;
+  --color-aiesec-deep: #0a1530;
+  --color-aiesec-sky: #62b7ff;
+  --color-aiesec-teal: #0cb9c1;
+  --color-aiesec-orange: #f48924;
+  --color-aiesec-red: #f85a40;
+  --color-aiesec-purple: #7552cc;
+  --color-aiesec-green: #00c16e;
+  --color-aiesec-yellow: #ffc845;
+  --color-aiesec-gray: #52565e;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: "Lato", system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Lato", sans-serif;
+  background: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  color: #0d1b3e;
 }
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #ffffff;
+}
+::-webkit-scrollbar-thumb {
+  background: #c0c8d8;
+  border-radius: 3px;
+}
+
+@media (max-width: 768px) {
+  .desktop-nav { display: none !important; }
+  .burger-btn  { display: block !important; }
+}
+@media (max-width: 640px) {
+  .hide-mobile { display: none !important; }
+}
+
+/* ── Footer ──────────────────────────────────────────────────────── */
+.footer-link {
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.18s ease, transform 0.18s ease;
+  width: fit-content;
+}
+.footer-link:hover {
+  color: #62b7ff;
+  transform: translateX(2px);
+}
+@media (max-width: 900px) {
+  .footer-grid {
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 28px !important;
+  }
+  .footer-brand {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 560px) {
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 28px !important;
+    text-align: center;
+  }
+  .footer-brand-row { justify-content: center; }
+  .footer-tagline { margin-left: auto; margin-right: auto; }
+  .footer-links { align-items: center; }
+  .footer-link:hover { transform: none; }
+  .footer-bottom {
+    justify-content: center !important;
+    text-align: center;
+  }
+}
+
+/* ── Global animations (from design) ─────────────────────────────── */
+@keyframes blink { 0%, 100% { opacity: 1 } 50% { opacity: 0 } }
+@keyframes pulse-dot { 0%, 100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.4); opacity: 0.6 } }
+@keyframes float1 { 0%, 100% { transform: translate(0, 0) scale(1) } 50% { transform: translate(40px, 30px) scale(1.1) } }
+@keyframes float2 { 0%, 100% { transform: translate(0, 0) scale(1) } 50% { transform: translate(-30px, -20px) scale(1.15) } }
+@keyframes float3 { 0%, 100% { transform: translate(-50%, -50%) scale(1) } 50% { transform: translate(-40%, -60%) scale(1.2) } }
+@keyframes spin360 { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
+@keyframes spinReverse { from { transform: rotate(360deg) } to { transform: rotate(0deg) } }
+@keyframes bubbleFloat { 0%, 100% { transform: translate(-50%, -50%) translateY(0) } 50% { transform: translate(-50%, -50%) translateY(-6px) } }
+@keyframes pulseRing { 0% { transform: scale(1); opacity: 0.6 } 100% { transform: scale(1.4); opacity: 0 } }
+@keyframes pulseRingHero { 0%, 100% { transform: scale(1); opacity: 0.7 } 50% { transform: scale(1.1); opacity: 1 } }
+@keyframes floatDot { 0%, 100% { transform: translate(0, 0); opacity: 0.4 } 50% { transform: translate(15px, -20px); opacity: 0.8 } }
+@keyframes gradientShift { 0% { background-position: 0% 50% } 100% { background-position: 200% 50% } }
+@keyframes shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes modalIn { from { opacity: 0; transform: translateY(20px) scale(0.96) } to { opacity: 1; transform: translateY(0) scale(1) } }
+@keyframes gridMove { from { background-position: 0 0 } to { background-position: 40px 40px } }
