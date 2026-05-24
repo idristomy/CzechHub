@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { COLORS } from "@/lib/theme";
 
 export default function AdminLogin({ onUnlock }: { onUnlock: (password: string) => boolean }) {
@@ -105,12 +106,12 @@ export default function AdminLogin({ onUnlock }: { onUnlock: (password: string) 
           Unlock →
         </button>
 
-        <a
+        <Link
           href="/"
           style={{ display: "block", textAlign: "center", marginTop: 18, color: "#52565e", fontSize: 13, textDecoration: "none", fontWeight: 600 }}
         >
           ← Back to site
-        </a>
+        </Link>
       </form>
     </div>
   );

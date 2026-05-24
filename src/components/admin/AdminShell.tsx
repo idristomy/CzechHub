@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties, type ReactNode } from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui";
 import { COLORS, areaColor } from "@/lib/theme";
 import { AREAS, EVENTS, LCS, LC_EB, MC_MEMBERS, NEWS, RESOURCES } from "@/lib/data";
@@ -358,7 +359,7 @@ export default function AdminShell({ onLogout }: { onLogout: () => void }) {
         <header style={{ background: "#fff", borderBottom: "1px solid #e7ebf2", padding: "0 28px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
           <h1 style={{ color: "#0d1b3e", fontWeight: 900, fontSize: 18, margin: 0, letterSpacing: "-0.01em" }}>{title}</h1>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <a href="/" style={{ color: "#52565e", fontSize: 13.5, fontWeight: 700, textDecoration: "none", padding: "8px 14px", borderRadius: 9, border: "1px solid #e2e7f0" }}>View site ↗</a>
+            <Link href="/" style={{ color: "#52565e", fontSize: 13.5, fontWeight: 700, textDecoration: "none", padding: "8px 14px", borderRadius: 9, border: "1px solid #e2e7f0" }}>View site ↗</Link>
             <button
               onClick={onLogout}
               style={{ border: "none", background: "#0d1b3e", color: "#fff", fontSize: 13.5, fontWeight: 700, padding: "9px 16px", borderRadius: 9, cursor: "pointer" }}
