@@ -143,7 +143,29 @@ export default function DatesPage() {
               );
             })}
             {visible.length === 0 && (
-              <p style={{ color: "#52565e", fontSize: 15, paddingLeft: 4 }}>No events of this type.</p>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 14,
+                  alignItems: "center",
+                  background: `${COLORS.blue}0d`,
+                  border: `1px solid ${COLORS.blue}26`,
+                  borderRadius: 16,
+                  padding: "18px 20px",
+                }}
+              >
+                <div style={{ fontSize: 22, lineHeight: 1 }}>🚧</div>
+                <div>
+                  <div style={{ color: "#0d1b3e", fontWeight: 800, fontSize: 15, marginBottom: 2 }}>
+                    Coming soon
+                  </div>
+                  <p style={{ color: "#52565e", fontSize: 13, lineHeight: 1.5, margin: 0 }}>
+                    {EVENTS.length === 0
+                      ? "Key dates and events will be shared here soon."
+                      : "No events of this type yet — more will be shared soon."}
+                  </p>
+                </div>
+              </div>
             )}
           </div>
         </Section>

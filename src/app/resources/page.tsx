@@ -74,6 +74,31 @@ export default function ResourcesPage() {
             })}
           </div>
 
+          {/* Coming soon notice */}
+          <div
+            style={{
+              display: "flex",
+              gap: 14,
+              alignItems: "center",
+              background: `${COLORS.blue}0d`,
+              border: `1px solid ${COLORS.blue}26`,
+              borderRadius: 16,
+              padding: "16px 20px",
+              marginBottom: 36,
+            }}
+          >
+            <div style={{ fontSize: 22, lineHeight: 1 }}>🚧</div>
+            <div>
+              <div style={{ color: "#0d1b3e", fontWeight: 800, fontSize: 15, marginBottom: 2 }}>
+                More resources coming soon
+              </div>
+              <p style={{ color: "#52565e", fontSize: 13, lineHeight: 1.5, margin: 0 }}>
+                We&apos;re still curating the full library. Additional brand, governance, tools and
+                conference materials will be shared here soon.
+              </p>
+            </div>
+          </div>
+
           {Array.from(grouped.entries()).map(([cat, items]) => (
             <div key={cat} style={{ marginBottom: 44 }}>
               <h2 style={{ color: "#0d1b3e", fontWeight: 900, fontSize: 22, margin: "0 0 18px", display: "flex", alignItems: "center", gap: 10 }}>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Silhouette } from "@/components/ui";
 import { areaColor, COLORS } from "@/lib/theme";
 import type { CSSProperties } from "react";
 
@@ -7,7 +8,7 @@ type CardProps = {
   name: string;
   area: string;
   role: "MCP" | "MCVP" | "LCP" | "LCVP";
-  photo: string;
+  photo?: string | null;
   isApex: boolean;
   color?: string;
   bio?: string;
@@ -37,6 +38,7 @@ export default function PyramidCard(props: CardProps) {
     bio,
   } = props;
   const isPresident = role === "MCP" || role === "LCP";
+  const placeholder = !photo;
   const col = props.color ?? (isPresident ? COLORS.blue : areaColor(area));
   const apexLabel = role === "MCP" ? "★ MCP" : "★ LCP";
   const vpLabel = role === "MCVP" ? "MCVP " + area : "LCVP " + area;
@@ -80,19 +82,25 @@ export default function PyramidCard(props: CardProps) {
 
   return (
     <div onMouseEnter={onHover} onMouseLeave={onLeave} onClick={onClick} style={containerStyle}>
-      {/* Background photo */}
+      {/* Background photo / silhouette placeholder */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          backgroundImage: `url(${photo})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center top",
+          ...(placeholder
+            ? {}
+            : {
+                backgroundImage: `url(${photo})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center top",
+                filter: "saturate(1.05)",
+              }),
           transition: "transform 0.7s cubic-bezier(0.16, 1, 0.3, 1)",
           transform: hovered ? "scale(1.08)" : "scale(1)",
-          filter: "saturate(1.05)",
         }}
-      />
+      >
+        {placeholder && <Silhouette bg="#12244a" fg="#31518a" />}
+      </div>
       {/* Gradient overlay */}
       <div style={{ position: "absolute", inset: 0, background: gradient, transition: "all 0.4s" }} />
       {/* Hover blue tint (MC only) */}
@@ -211,7 +219,7 @@ export default function PyramidCard(props: CardProps) {
             textOverflow: "ellipsis",
           }}
         >
-          {name}
+          {placeholder ? "To be announced" : name}
         </h3>
 
         <p
@@ -225,10 +233,10 @@ export default function PyramidCard(props: CardProps) {
             textOverflow: "ellipsis",
           }}
         >
-          {isApex ? bio?.split(".")[0] + "." : "Leading " + area}
+          {placeholder ? "Awaiting appointment" : isApex ? bio?.split(".")[0] + "." : "Leading " + area}
         </p>
 
-        {(role === "MCP" || role === "MCVP") && (
+        {!placeholder && (role === "MCP" || role === "MCVP") && (
           <div
             style={{
               marginTop: hovered ? 10 : 0,

@@ -3,6 +3,32 @@
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { COLORS } from "@/lib/theme";
 
+// ── Silhouette (empty member placeholder — shadow body shape) ───────
+export function Silhouette({
+  bg = "#12244a",
+  fg = "#31518a",
+  fgOpacity = 1,
+}: {
+  bg?: string;
+  fg?: string;
+  fgOpacity?: number;
+}) {
+  return (
+    <svg
+      viewBox="0 0 300 400"
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden
+      style={{ width: "100%", height: "100%", display: "block" }}
+    >
+      <rect width="300" height="400" fill={bg} />
+      <g fill={fg} opacity={fgOpacity}>
+        <circle cx="150" cy="150" r="62" />
+        <path d="M42 400c0-71 48-128 108-128s108 57 108 128z" />
+      </g>
+    </svg>
+  );
+}
+
 // ── Avatar ─────────────────────────────────────────────────────────
 export function Avatar({
   name,
@@ -15,12 +41,6 @@ export function Avatar({
   color?: string;
   photo?: string | null;
 }) {
-  const initials = name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
   if (photo)
     return (
       // eslint-disable-next-line @next/next/no-img-element
@@ -32,22 +52,18 @@ export function Avatar({
     );
   return (
     <div
+      role="img"
+      aria-label={name}
       style={{
         width: size,
         height: size,
         borderRadius: "50%",
-        background: `linear-gradient(135deg, ${color}dd, ${color}88)`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#fff",
-        fontWeight: 700,
-        fontSize: size * 0.36,
+        overflow: "hidden",
         flexShrink: 0,
-        letterSpacing: "0.02em",
+        background: "#eef1f7",
       }}
     >
-      {initials}
+      <Silhouette bg="#eef1f7" fg={color} fgOpacity={0.5} />
     </div>
   );
 }

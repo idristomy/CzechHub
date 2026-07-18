@@ -94,7 +94,7 @@ export default function AreaDetailPage() {
                     <div style={{ color: "#52565e", fontSize: 13 }}>MCVP {area.code}</div>
                   </div>
                 </div>
-                <p style={{ color: "#52565e", fontSize: 14, lineHeight: 1.6, margin: "0 0 18px" }}>{lead.bio}</p>
+                {lead.bio && <p style={{ color: "#52565e", fontSize: 14, lineHeight: 1.6, margin: "0 0 18px" }}>{lead.bio}</p>}
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   <a href={`mailto:${area.code.toLowerCase()}@aiesec.cz`} style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center", padding: "11px 18px", background: col, color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
                     ✉ {area.code.toLowerCase()}@aiesec.cz

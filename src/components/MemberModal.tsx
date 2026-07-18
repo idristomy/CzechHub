@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { Silhouette } from "@/components/ui";
 import { areaColor, COLORS } from "@/lib/theme";
 
 type ModalMember = {
@@ -17,7 +18,7 @@ export default function MemberModal({
   onClose,
 }: {
   member: ModalMember;
-  photo: string;
+  photo: string | null;
   onClose: () => void;
 }) {
   const isPresident = member.role === "MCP" || member.role === "LCP";
@@ -66,13 +67,22 @@ export default function MemberModal({
       >
         <div
           style={{
-            backgroundImage: `url(${photo})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
+            ...(photo
+              ? {
+                  backgroundImage: `url(${photo})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }
+              : { background: "#12244a" }),
             minHeight: 380,
             position: "relative",
           }}
         >
+          {!photo && (
+            <div style={{ position: "absolute", inset: 0 }}>
+              <Silhouette bg="#12244a" fg="#31518a" />
+            </div>
+          )}
           <div
             style={{
               position: "absolute",

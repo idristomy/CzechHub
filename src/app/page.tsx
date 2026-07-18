@@ -119,6 +119,30 @@ const TYPE_COLORS: Record<string, string> = {
   International: "#7552cc",
 };
 
+function ComingSoon({ message }: { message: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: 14,
+        alignItems: "center",
+        background: `${COLORS.blue}0d`,
+        border: `1px solid ${COLORS.blue}26`,
+        borderRadius: 16,
+        padding: "18px 20px",
+      }}
+    >
+      <div style={{ fontSize: 22, lineHeight: 1 }}>🚧</div>
+      <div>
+        <div style={{ color: "#0d1b3e", fontWeight: 800, fontSize: 15, marginBottom: 2 }}>
+          Coming soon
+        </div>
+        <p style={{ color: "#52565e", fontSize: 13, lineHeight: 1.5, margin: 0 }}>{message}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const words = ["Czech Members.", "LC Leaders.", "MC Board.", "AIESEC Czechia."];
   const [twIdx, setTwIdx] = useState(0);
@@ -740,6 +764,7 @@ export default function HomePage() {
               <div>
                 <SectionHeader eyebrow="Updates" title="Latest News" />
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {NEWS.length === 0 && <ComingSoon message="News and updates will be shared here soon." />}
                   {NEWS.map((n) => (
                     <div
                       key={n.id}
@@ -809,6 +834,7 @@ export default function HomePage() {
               <div>
                 <SectionHeader eyebrow="Calendar" title="Upcoming Events" />
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  {upcoming.length === 0 && <ComingSoon message="Upcoming events and key dates will be shared here soon." />}
                   {upcoming.map((e) => {
                     const d = new Date(e.date);
                     const daysLeft = Math.ceil((d.getTime() - today.getTime()) / 86400000);

@@ -7,7 +7,7 @@ import Hero, { HeroHighlight } from "@/components/Hero";
 import MemberModal from "@/components/MemberModal";
 import PyramidCard from "@/components/PyramidCard";
 import { PageWrapper, Section } from "@/components/ui";
-import { MC_MEMBERS, PORTRAITS } from "@/lib/data";
+import { MC_MEMBERS } from "@/lib/data";
 import type { Member } from "@/lib/types";
 
 export default function MCPage() {
@@ -69,7 +69,7 @@ export default function MCPage() {
                 name={mcp.name}
                 area={mcp.area}
                 role="MCP"
-                photo={PORTRAITS[0]}
+                photo={null}
                 isApex
                 bio={mcp.bio}
                 hovered={hovered === "mcp"}
@@ -91,7 +91,7 @@ export default function MCPage() {
                   name={m.name}
                   area={m.area}
                   role="MCVP"
-                  photo={PORTRAITS[i + 1]}
+                  photo={null}
                   isApex={false}
                   bio={m.bio}
                   hovered={hovered === m.id}
@@ -110,7 +110,7 @@ export default function MCPage() {
         {selected && (
           <MemberModal
             member={selected}
-            photo={PORTRAITS[MC_MEMBERS.indexOf(selected)]}
+            photo={null}
             onClose={() => setSelected(null)}
           />
         )}

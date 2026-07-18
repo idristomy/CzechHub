@@ -9,7 +9,7 @@ import MemberModal from "@/components/MemberModal";
 import PyramidCard from "@/components/PyramidCard";
 import { Btn, PageWrapper, Section } from "@/components/ui";
 import { COLORS } from "@/lib/theme";
-import { LCS, LC_EB, PORTRAITS } from "@/lib/data";
+import { LCS, LC_EB } from "@/lib/data";
 import type { LCMember } from "@/lib/types";
 
 export default function LcDetailPage() {
@@ -22,7 +22,7 @@ export default function LcDetailPage() {
 
   const [mounted, setMounted] = useState(false);
   const [hovered, setHovered] = useState<number | "apex" | null>(null);
-  const [selected, setSelected] = useState<{ member: LCMember; photo: string } | null>(null);
+  const [selected, setSelected] = useState<{ member: LCMember; photo: string | null } | null>(null);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50);
     return () => clearTimeout(t);
@@ -80,13 +80,13 @@ export default function LcDetailPage() {
                 name={lcp.name}
                 area={lcp.area}
                 role="LCP"
-                photo={PORTRAITS[0]}
+                photo={null}
                 isApex
                 bio={`Leading AIESEC in ${lc.city}.`}
                 hovered={hovered === "apex"}
                 onHover={() => setHovered("apex")}
                 onLeave={() => setHovered(null)}
-                onClick={() => setSelected({ member: lcp, photo: PORTRAITS[0] })}
+                onClick={() => setSelected({ member: lcp, photo: null })}
                 animDelay={0.3}
                 mounted={mounted}
               />
@@ -95,20 +95,19 @@ export default function LcDetailPage() {
 
           <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 16, maxWidth: 1100, margin: "0 auto", position: "relative", zIndex: 2 }}>
             {lcvps.map((m, i) => {
-              const photo = PORTRAITS[(i + 1) % PORTRAITS.length];
               return (
                 <div key={i} style={{ width: 190, maxWidth: "44vw" }}>
                   <PyramidCard
                     name={m.name}
                     area={m.area}
                     role="LCVP"
-                    photo={photo}
+                    photo={null}
                     isApex={false}
                     hovered={hovered === i}
                     dimmed={hovered !== null && hovered !== i && hovered !== "apex"}
                     onHover={() => setHovered(i)}
                     onLeave={() => setHovered(null)}
-                    onClick={() => setSelected({ member: m, photo })}
+                    onClick={() => setSelected({ member: m, photo: null })}
                     animDelay={0.45 + i * 0.08}
                     mounted={mounted}
                   />
