@@ -6,14 +6,19 @@ import { useEffect, useState } from "react";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { Avatar, Btn, PageWrapper, Section } from "@/components/ui";
+import SocialLinks from "@/components/SocialLinks";
 import { areaColor } from "@/lib/theme";
-import { AREAS, MC_MEMBERS } from "@/lib/data";
+import { MC_MEMBERS } from "@/lib/data";
+import { useCollection } from "@/lib/useData";
+import { areasFromMembers, areaHandle } from "@/lib/areas";
+import type { Member } from "@/lib/types";
 
 export default function AreaDetailPage() {
   const params = useParams();
-  const code = String(params.code || "").toUpperCase();
-  const area = AREAS.find((a) => a.code === code);
-  const lead = MC_MEMBERS.find((m) => m.area === code);
+  const slug = String(params.code || "");
+  const { data: members } = useCollection<Member>("mc_members", MC_MEMBERS, "sort");
+  const area = areasFromMembers(members).find((a) => a.slug === slug);
+  const lead = area?.lead;
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -28,7 +33,7 @@ export default function AreaDetailPage() {
         <PageWrapper>
           <Section style={{ textAlign: "center", padding: "120px 24px" }}>
             <h1 style={{ color: "#0d1b3e", fontWeight: 900, fontSize: 36, marginBottom: 12 }}>Area not found</h1>
-            <p style={{ color: "#52565e", fontSize: 16, marginBottom: 24 }}>We couldn&apos;t find a functional area with code &quot;{code}&quot;.</p>
+            <p style={{ color: "#52565e", fontSize: 16, marginBottom: 24 }}>This functional area doesn&apos;t exist. It appears once an MCVP is assigned to it.</p>
             <Btn href="/areas">← Back to all areas</Btn>
           </Section>
           <Footer />
@@ -37,7 +42,8 @@ export default function AreaDetailPage() {
     );
   }
 
-  const col = areaColor(area.code);
+  const col = areaColor(area.name);
+  const email = lead?.email || `${areaHandle(area.name)}@aiesec.cz`;
 
   return (
     <>
@@ -49,16 +55,18 @@ export default function AreaDetailPage() {
           <div style={{ maxWidth: 1000, margin: "0 auto", position: "relative" }}>
             <Link href="/areas" style={{ color: "rgba(255,255,255,0.7)", fontSize: 13.5, fontWeight: 700, textDecoration: "none" }}>← All areas</Link>
             <div style={{ display: "flex", alignItems: "center", gap: 20, marginTop: 24, opacity: mounted ? 1 : 0, transform: mounted ? "translateY(0)" : "translateY(20px)", transition: "all 0.8s cubic-bezier(0.16, 1, 0.3, 1)" }}>
-              <div style={{ width: 84, height: 84, borderRadius: 22, background: `linear-gradient(135deg, ${col}, ${col}cc)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 900, fontSize: 26, boxShadow: `0 12px 30px ${col}66`, flexShrink: 0 }}>
+              <div style={{ width: 84, height: 84, borderRadius: 22, background: `linear-gradient(135deg, ${col}, ${col}cc)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 900, fontSize: 22, boxShadow: `0 12px 30px ${col}66`, flexShrink: 0 }}>
                 {area.code}
               </div>
               <div>
                 <h1 style={{ color: "#fff", fontWeight: 900, fontSize: "clamp(32px,5vw,52px)", margin: 0, lineHeight: 1.05, letterSpacing: "-0.02em" }}>{area.name}</h1>
               </div>
             </div>
-            <p style={{ color: "rgba(255,255,255,0.78)", fontSize: 18, maxWidth: 640, marginTop: 20, lineHeight: 1.6, opacity: mounted ? 1 : 0, transform: mounted ? "translateY(0)" : "translateY(20px)", transition: "all 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.15s" }}>
-              {area.desc}
-            </p>
+            {area.desc && (
+              <p style={{ color: "rgba(255,255,255,0.78)", fontSize: 18, maxWidth: 640, marginTop: 20, lineHeight: 1.6, opacity: mounted ? 1 : 0, transform: mounted ? "translateY(0)" : "translateY(20px)", transition: "all 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.15s" }}>
+                {area.desc}
+              </p>
+            )}
           </div>
         </div>
 
@@ -91,19 +99,17 @@ export default function AreaDetailPage() {
                   <Avatar name={lead.name} size={56} color={col} photo={lead.photo} />
                   <div>
                     <div style={{ color: "#0d1b3e", fontWeight: 800, fontSize: 16 }}>{lead.name}</div>
-                    <div style={{ color: "#52565e", fontSize: 13 }}>MCVP {area.code}</div>
+                    <div style={{ color: "#52565e", fontSize: 13 }}>MCVP {area.name}</div>
                   </div>
                 </div>
                 {lead.bio && <p style={{ color: "#52565e", fontSize: 14, lineHeight: 1.6, margin: "0 0 18px" }}>{lead.bio}</p>}
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  <a href={`mailto:${area.code.toLowerCase()}@aiesec.cz`} style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center", padding: "11px 18px", background: col, color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
-                    ✉ {area.code.toLowerCase()}@aiesec.cz
+                  <a href={`mailto:${email}`} style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center", padding: "11px 18px", background: col, color: "#fff", borderRadius: 10, fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
+                    ✉ {email}
                   </a>
-                  {lead.linkedin && (
-                    <a href={lead.linkedin} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center", padding: "11px 18px", background: "#f8f8f8", color: "#0d1b3e", borderRadius: 10, fontWeight: 700, fontSize: 14, textDecoration: "none" }}>
-                      🔗 LinkedIn
-                    </a>
-                  )}
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <SocialLinks socials={lead} />
+                  </div>
                 </div>
               </aside>
             )}

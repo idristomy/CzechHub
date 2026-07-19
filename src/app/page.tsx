@@ -7,13 +7,16 @@ import Footer from "@/components/Footer";
 import { Badge, Btn, PageWrapper, Section, SectionHeader } from "@/components/ui";
 import { COLORS } from "@/lib/theme";
 import { EVENTS, NEWS } from "@/lib/data";
+import { useCollection } from "@/lib/useData";
+import { useSettings, splitStat, type SiteSettings } from "@/lib/settings";
+import type { EventItem, NewsItem } from "@/lib/types";
 
-const STATS = [
-  { value: 5, suffix: "", label: "Local Committees" },
-  { value: 340, suffix: "+", label: "Active Members" },
-  { value: 12, suffix: "", label: "Exchange Programs" },
-  { value: 28, suffix: "", label: "Countries Reached" },
-] as const;
+const STAT_DEFS: { key: keyof SiteSettings; label: string }[] = [
+  { key: "stat_lcs", label: "Local Committees" },
+  { key: "stat_members", label: "Active Members" },
+  { key: "stat_programs", label: "Exchange Programs" },
+  { key: "stat_countries", label: "Countries Reached" },
+];
 
 function Counter({ end, active, duration = 1400 }: { end: number; active: boolean; duration?: number }) {
   const [n, setN] = useState(0);
@@ -35,9 +38,10 @@ function Counter({ end, active, duration = 1400 }: { end: number; active: boolea
   return <span>{n}</span>;
 }
 
-function StatsSection() {
+function StatsSection({ settings }: { settings: SiteSettings }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
+  const stats = STAT_DEFS.map((d) => ({ ...splitStat(settings[d.key]), label: d.label }));
   useEffect(() => {
     if (!ref.current) return;
     const io = new IntersectionObserver(
@@ -60,7 +64,7 @@ function StatsSection() {
           borderBottom: "1px solid #eef1f6",
         }}
       >
-        {STATS.map((s, i) => (
+        {stats.map((s, i) => (
           <div
             key={i}
             style={{
@@ -84,7 +88,7 @@ function StatsSection() {
                 justifyContent: "center",
               }}
             >
-              <Counter end={s.value} active={visible} />
+              <Counter end={s.num} active={visible} />
               <span style={{ color: COLORS.blue }}>{s.suffix}</span>
             </div>
             <div
@@ -144,6 +148,7 @@ function ComingSoon({ message }: { message: string }) {
 }
 
 export default function HomePage() {
+  const settings = useSettings();
   const words = ["Czech Members.", "LC Leaders.", "MC Board.", "AIESEC Czechia."];
   const [twIdx, setTwIdx] = useState(0);
   const [twText, setTwText] = useState("");
@@ -187,13 +192,15 @@ export default function HomePage() {
 
   const quickLinks = [
     { icon: "👥", label: "MC Board", sub: "Meet our national leadership", href: "/mc", color: COLORS.blue },
-    { icon: "📋", label: "Functional Areas", sub: "Explore all 7 MC areas", href: "/areas", color: COLORS.purple },
+    { icon: "📋", label: "Functional Areas", sub: "Explore the MC's areas", href: "/areas", color: COLORS.purple },
     { icon: "🏙️", label: "Local Committees", sub: "5 LCs across Czech Republic", href: "/lcs", color: COLORS.teal },
     { icon: "📚", label: "Resources", sub: "Docs, guides & tools", href: "/resources", color: COLORS.orange },
   ];
 
+  const { data: events } = useCollection<EventItem>("events", EVENTS, "date");
+  const { data: news } = useCollection<NewsItem>("news", NEWS, "date", false);
   const today = new Date("2026-04-29");
-  const upcoming = EVENTS.filter((e) => new Date(e.date) >= today).slice(0, 3);
+  const upcoming = events.filter((e) => new Date(e.date) >= today).slice(0, 3);
 
   return (
     <>
@@ -542,10 +549,10 @@ export default function HomePage() {
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   {[
-                    ["340+", "Members"],
-                    ["5", "LCs"],
-                    ["7", "Areas"],
-                    ["12+", "Programs"],
+                    [settings.stat_members, "Members"],
+                    [settings.stat_lcs, "LCs"],
+                    [settings.stat_areas, "Areas"],
+                    [settings.stat_programs, "Programs"],
                   ].map(([v, l]) => (
                     <div
                       key={l}
@@ -647,7 +654,7 @@ export default function HomePage() {
           </svg>
         </div>
 
-        <StatsSection />
+        <StatsSection settings={settings} />
 
         {/* Quick access */}
         <Section>
@@ -764,8 +771,8 @@ export default function HomePage() {
               <div>
                 <SectionHeader eyebrow="Updates" title="Latest News" />
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {NEWS.length === 0 && <ComingSoon message="News and updates will be shared here soon." />}
-                  {NEWS.map((n) => (
+                  {news.length === 0 && <ComingSoon message="News and updates will be shared here soon." />}
+                  {news.map((n) => (
                     <div
                       key={n.id}
                       style={{

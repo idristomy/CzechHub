@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import AdminLogin from "@/components/admin/AdminLogin";
 import AdminShell from "@/components/admin/AdminShell";
 
-const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "czechhub2026";
 const STORAGE_KEY = "czechhub_admin_auth";
 
 export default function AdminPage() {
@@ -16,8 +15,13 @@ export default function AdminPage() {
     setReady(true);
   }, []);
 
-  const unlock = (password: string) => {
-    if (password === ADMIN_PASSWORD) {
+  const unlock = async (password: string) => {
+    const res = await fetch("/api/admin/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    if (res.ok) {
       sessionStorage.setItem(STORAGE_KEY, "1");
       setAuthed(true);
       return true;
@@ -25,7 +29,8 @@ export default function AdminPage() {
     return false;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await fetch("/api/admin/logout", { method: "POST" }).catch(() => {});
     sessionStorage.removeItem(STORAGE_KEY);
     setAuthed(false);
   };

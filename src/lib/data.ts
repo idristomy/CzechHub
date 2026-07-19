@@ -23,19 +23,18 @@ export const AREAS: Area[] = [
   { code: "ICX", name: "Incoming Exchange", desc: "Managing incoming global talent and volunteer exchange programs.", mcvp: TBA, slides: "" },
   { code: "BD", name: "Business Development", desc: "Building partnerships and corporate relationships nationwide.", mcvp: TBA, slides: "" },
   { code: "TM", name: "Talent Management", desc: "Recruitment, member development, and HR practices across all LCs.", mcvp: TBA, slides: "" },
-  { code: "PM", name: "Product Management", desc: "Digital products, tools, and platform strategy for Czech Republic.", mcvp: TBA, slides: "" },
   { code: "FIN", name: "Finance", desc: "Financial governance, reporting, and accountability for the entity.", mcvp: TBA, slides: "" },
 ];
 
+const M0 = { bio: "", area_desc: "", slides: "", linkedin: "", instagram: "", facebook: "", twitter: "", tiktok: "", email: "", photo: null };
 export const MC_MEMBERS: Member[] = [
-  { id: 1, role: "MCP", name: TBA, area: "President", bio: "", linkedin: "", photo: null },
-  { id: 2, role: "MCVP", name: TBA, area: "MKT", bio: "", linkedin: "", photo: null },
-  { id: 3, role: "MCVP", name: TBA, area: "OGX", bio: "", linkedin: "", photo: null },
-  { id: 4, role: "MCVP", name: TBA, area: "ICX", bio: "", linkedin: "", photo: null },
-  { id: 5, role: "MCVP", name: TBA, area: "BD", bio: "", linkedin: "", photo: null },
-  { id: 6, role: "MCVP", name: TBA, area: "TM", bio: "", linkedin: "", photo: null },
-  { id: 7, role: "MCVP", name: TBA, area: "PM", bio: "", linkedin: "", photo: null },
-  { id: 8, role: "MCVP", name: TBA, area: "FIN", bio: "", linkedin: "", photo: null },
+  { id: 1, role: "MCP", name: TBA, area: "President", ...M0 },
+  { id: 2, role: "MCVP", name: TBA, area: "MKT", ...M0 },
+  { id: 3, role: "MCVP", name: TBA, area: "OGX", ...M0 },
+  { id: 4, role: "MCVP", name: TBA, area: "ICX", ...M0 },
+  { id: 5, role: "MCVP", name: TBA, area: "BD", ...M0 },
+  { id: 6, role: "MCVP", name: TBA, area: "TM", ...M0 },
+  { id: 8, role: "MCVP", name: TBA, area: "FIN", ...M0 },
 ];
 
 export const LCS: LC[] = [
@@ -77,6 +76,11 @@ export const LC_EB: Record<string, LCMember[]> = {
     { name: TBA, role: "LCVP", area: "FIN" },
   ],
 };
+
+/** Flat version of LC_EB (one row per member) — fallback for the lc_members table. */
+export const LC_MEMBERS_FLAT: (LCMember & { lc_slug: string })[] = Object.entries(LC_EB).flatMap(
+  ([lc_slug, members]) => members.map((m) => ({ lc_slug, ...m }))
+);
 
 export const RESOURCES: Resource[] = [
   { cat: "MKT", label: "How to Handle the Promotion of Multiple Products at Once", desc: "Guide to promoting several AIESEC products simultaneously without diluting your message.", url: "https://drive.google.com/file/d/1k1I7LolQOqGnt8-sy43jN5oqtm7RofGJ/view?usp=sharing", type: "pdf" },

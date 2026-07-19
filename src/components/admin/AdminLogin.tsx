@@ -4,13 +4,18 @@ import { useState } from "react";
 import Link from "next/link";
 import { COLORS } from "@/lib/theme";
 
-export default function AdminLogin({ onUnlock }: { onUnlock: (password: string) => boolean }) {
+export default function AdminLogin({ onUnlock }: { onUnlock: (password: string) => Promise<boolean> | boolean }) {
   const [pw, setPw] = useState("");
   const [error, setError] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!onUnlock(pw)) {
+    setError(false);
+    setBusy(true);
+    const ok = await onUnlock(pw);
+    setBusy(false);
+    if (!ok) {
       setError(true);
       setPw("");
     }
@@ -89,6 +94,7 @@ export default function AdminLogin({ onUnlock }: { onUnlock: (password: string) 
 
         <button
           type="submit"
+          disabled={busy}
           style={{
             width: "100%",
             marginTop: 22,
@@ -99,11 +105,12 @@ export default function AdminLogin({ onUnlock }: { onUnlock: (password: string) 
             color: "#fff",
             fontSize: 15,
             fontWeight: 800,
-            cursor: "pointer",
+            cursor: busy ? "wait" : "pointer",
+            opacity: busy ? 0.7 : 1,
             boxShadow: "0 8px 22px rgba(3,126,243,0.35)",
           }}
         >
-          Unlock →
+          {busy ? "Checking…" : "Unlock →"}
         </button>
 
         <Link

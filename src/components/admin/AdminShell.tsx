@@ -1,21 +1,32 @@
 "use client";
 
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui";
 import { COLORS, areaColor } from "@/lib/theme";
-import { AREAS, EVENTS, LCS, LC_EB, MC_MEMBERS, NEWS, RESOURCES } from "@/lib/data";
+import { EVENTS, LCS, LC_MEMBERS_FLAT, MC_MEMBERS, NEWS, RESOURCES } from "@/lib/data";
+import { useCollection } from "@/lib/useData";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { adminMutate } from "@/lib/admin-client";
+import { ENTITIES, SETTINGS_ENTITY, AREA_ADMIN_ENTITY, type Entity, type EntityKey, type Field } from "@/lib/admin-entities";
+import { SETTINGS_DEFAULTS } from "@/lib/settings";
+import EntityEditor from "./EntityEditor";
 
-type SectionKey = "dashboard" | "mc" | "lcs" | "areas" | "resources" | "events" | "news";
+type Row = Record<string, unknown>;
+type SectionKey = "dashboard" | "settings" | "areas" | EntityKey;
+
+const SECTIONS: EntityKey[] = ["mc", "lcs", "lcmembers", "resources", "events", "news"];
 
 const NAV: { key: SectionKey; label: string }[] = [
   { key: "dashboard", label: "Dashboard" },
-  { key: "mc", label: "MC Board" },
-  { key: "lcs", label: "Local Committees" },
-  { key: "areas", label: "Functional Areas" },
-  { key: "resources", label: "Resources" },
-  { key: "events", label: "Events" },
-  { key: "news", label: "News" },
+  { key: "mc", label: ENTITIES.mc.navLabel },
+  { key: "areas", label: AREA_ADMIN_ENTITY.navLabel },
+  { key: "lcs", label: ENTITIES.lcs.navLabel },
+  { key: "lcmembers", label: ENTITIES.lcmembers.navLabel },
+  { key: "resources", label: ENTITIES.resources.navLabel },
+  { key: "events", label: ENTITIES.events.navLabel },
+  { key: "news", label: ENTITIES.news.navLabel },
+  { key: "settings", label: SETTINGS_ENTITY.navLabel },
 ];
 
 const TYPE_COLORS: Record<string, string> = {
@@ -25,17 +36,11 @@ const TYPE_COLORS: Record<string, string> = {
   International: COLORS.purple,
 };
 
+const thStyle: CSSProperties = { textAlign: "left", padding: "13px 18px", fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "#8a909c", whiteSpace: "nowrap" };
+const tdStyle: CSSProperties = { padding: "13px 18px", fontSize: 13.5, color: "#0d1b3e", verticalAlign: "middle" };
+
 function Icon({ name }: { name: SectionKey }) {
-  const c = {
-    width: 19,
-    height: 19,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 1.9,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-  };
+  const c = { width: 19, height: 19, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.9, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   switch (name) {
     case "dashboard":
       return (<svg {...c}><rect x="3" y="3" width="7" height="9" rx="1" /><rect x="14" y="3" width="7" height="5" rx="1" /><rect x="14" y="12" width="7" height="9" rx="1" /><rect x="3" y="16" width="7" height="5" rx="1" /></svg>);
@@ -43,6 +48,8 @@ function Icon({ name }: { name: SectionKey }) {
       return (<svg {...c}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>);
     case "lcs":
       return (<svg {...c}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>);
+    case "lcmembers":
+      return (<svg {...c}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>);
     case "areas":
       return (<svg {...c}><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /></svg>);
     case "resources":
@@ -51,111 +58,116 @@ function Icon({ name }: { name: SectionKey }) {
       return (<svg {...c}><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>);
     case "news":
       return (<svg {...c}><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9h4" /><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z" /></svg>);
+    case "settings":
+      return (<svg {...c}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>);
   }
 }
 
-const thStyle: CSSProperties = { textAlign: "left", padding: "13px 18px", fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "#8a909c", whiteSpace: "nowrap" };
-const tdStyle: CSSProperties = { padding: "14px 18px", fontSize: 13.5, color: "#0d1b3e", verticalAlign: "middle" };
+function fmtDate(d: string) {
+  const parsed = new Date(d);
+  if (isNaN(parsed.getTime())) return d;
+  return parsed.toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric" });
+}
 
-function DisabledBtn({ children, danger }: { children: ReactNode; danger?: boolean }) {
+function badgeColor(f: Field, row: Row) {
+  if (f.key === "type") return TYPE_COLORS[String(row.type)] || COLORS.gray;
+  if (f.key === "role") return row.role === "MCP" || row.role === "LCP" ? COLORS.blue : areaColor(String(row.area || ""));
+  return COLORS.blue;
+}
+
+function Cell({ f, row }: { f: Field; row: Row }) {
+  const v = row[f.key];
+  if (v == null || v === "") return <span style={{ color: "#c2c8d4" }}>—</span>;
+  if (f.type === "date") return <span style={{ whiteSpace: "nowrap", color: "#52565e" }}>{fmtDate(String(v))}</span>;
+  if (f.key === "role" || f.key === "type") return <Badge label={String(v)} color={badgeColor(f, row)} />;
+  if (f.type === "url") return <a href={String(v)} target="_blank" rel="noreferrer" style={{ color: COLORS.blue, textDecoration: "none", fontWeight: 600 }}>Link ↗</a>;
+  const s = String(v);
+  const short = s.length > 44 ? s.slice(0, 44) + "…" : s;
+  return <span style={{ fontWeight: f.key === "name" || f.key === "label" || f.key === "title" ? 700 : 400 }}>{short}</span>;
+}
+
+function ActionBtn({ children, onClick, danger }: { children: React.ReactNode; onClick: () => void; danger?: boolean }) {
   return (
     <button
-      disabled
-      title="Connect Supabase to enable editing"
-      style={{
-        border: `1px solid ${danger ? "#f3c7c2" : "#dde3ec"}`,
-        background: "#fff",
-        color: danger ? "#c0473b" : "#52565e",
-        fontSize: 12,
-        fontWeight: 700,
-        padding: "6px 12px",
-        borderRadius: 8,
-        cursor: "not-allowed",
-        opacity: 0.6,
-        marginLeft: 8,
-      }}
+      onClick={onClick}
+      style={{ border: `1px solid ${danger ? "#f3c7c2" : "#dde3ec"}`, background: "#fff", color: danger ? "#c0473b" : "#52565e", fontSize: 12, fontWeight: 700, padding: "6px 12px", borderRadius: 8, cursor: "pointer", marginLeft: 8 }}
     >
       {children}
     </button>
   );
 }
 
-function Table({ head, rows }: { head: string[]; rows: ReactNode[][] }) {
-  return (
-    <div style={{ overflowX: "auto", background: "#fff", border: "1px solid #e7ebf2", borderRadius: 14, boxShadow: "0 1px 3px rgba(13,27,62,0.05)" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 660 }}>
-        <thead>
-          <tr style={{ background: "#f8fafc", borderBottom: "1px solid #eef1f6" }}>
-            {head.map((h, i) => (<th key={i} style={thStyle}>{h}</th>))}
-            <th style={{ ...thStyle, textAlign: "right" }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((cells, ri) => (
-            <tr key={ri} style={{ borderTop: ri === 0 ? "none" : "1px solid #f0f2f6" }}>
-              {cells.map((cell, ci) => (<td key={ci} style={tdStyle}>{cell}</td>))}
-              <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>
-                <DisabledBtn>Edit</DisabledBtn>
-                <DisabledBtn danger>Delete</DisabledBtn>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function ReadOnlyNotice() {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#eef6ff", border: "1px solid #cfe4fd", borderRadius: 12, padding: "12px 16px", marginBottom: 22 }}>
-      <span style={{ flexShrink: 0, width: 22, height: 22, borderRadius: "50%", background: COLORS.blue, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900 }}>i</span>
-      <span style={{ color: "#0d4a8a", fontSize: 13.5, lineHeight: 1.5 }}>
-        <strong>Read-only preview.</strong> Data is loaded from the static layer. Connect Supabase to enable creating, editing and deleting.
-      </span>
-    </div>
-  );
-}
-
-function SectionHeader({ title, subtitle, addLabel }: { title: string; subtitle: string; addLabel: string }) {
-  return (
-    <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 22 }}>
-      <div>
-        <h2 style={{ color: "#0d1b3e", fontWeight: 900, fontSize: 24, margin: "0 0 4px", letterSpacing: "-0.02em" }}>{title}</h2>
-        <p style={{ color: "#52565e", fontSize: 14, margin: 0 }}>{subtitle}</p>
-      </div>
-      <button
-        disabled
-        title="Connect Supabase to enable editing"
-        style={{ border: "none", background: COLORS.blue, color: "#fff", fontSize: 13.5, fontWeight: 800, padding: "11px 18px", borderRadius: 10, cursor: "not-allowed", opacity: 0.5 }}
-      >
-        + {addLabel}
-      </button>
-    </div>
-  );
-}
-
-function fmtDate(d: string) {
-  return new Date(d).toLocaleDateString("en", { day: "numeric", month: "short", year: "numeric" });
-}
-
-function Dashboard({ go }: { go: (s: SectionKey) => void }) {
-  const cards: { key: SectionKey; label: string; count: number }[] = [
-    { key: "mc", label: "MC Members", count: MC_MEMBERS.length },
-    { key: "lcs", label: "Local Committees", count: LCS.length },
-    { key: "areas", label: "Functional Areas", count: AREAS.length },
-    { key: "resources", label: "Resources", count: RESOURCES.length },
-    { key: "events", label: "Events", count: EVENTS.length },
-    { key: "news", label: "News Posts", count: NEWS.length },
-  ];
-  const today = new Date("2026-05-23");
-  const upcoming = [...EVENTS].filter((e) => new Date(e.date) >= today).sort((a, b) => +new Date(a.date) - +new Date(b.date)).slice(0, 4);
-
+function EntitySection({
+  entity,
+  rows,
+  onAdd,
+  onEdit,
+  onDelete,
+}: {
+  entity: Entity;
+  rows: Row[];
+  onAdd: () => void;
+  onEdit: (row: Row) => void;
+  onDelete: (row: Row) => void;
+}) {
+  const listFields = entity.fields.filter((f) => f.type !== "textarea" && f.key !== "sort").slice(0, 4);
   return (
     <>
-      <SectionHeaderLite title="Dashboard" subtitle="Overview of all CzechHub content." />
-      <ReadOnlyNotice />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginBottom: 32 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 22 }}>
+        <div>
+          <h2 style={{ color: "#0d1b3e", fontWeight: 900, fontSize: 24, margin: "0 0 4px", letterSpacing: "-0.02em" }}>{entity.title}</h2>
+          <p style={{ color: "#52565e", fontSize: 14, margin: 0 }}>{entity.subtitle}</p>
+        </div>
+        <button onClick={onAdd} style={{ border: "none", background: COLORS.blue, color: "#fff", fontSize: 13.5, fontWeight: 800, padding: "11px 18px", borderRadius: 10, cursor: "pointer", boxShadow: "0 6px 16px rgba(3,126,243,0.28)" }}>
+          + Add {entity.singular}
+        </button>
+      </div>
+
+      <div style={{ overflowX: "auto", background: "#fff", border: "1px solid #e7ebf2", borderRadius: 14, boxShadow: "0 1px 3px rgba(13,27,62,0.05)" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
+          <thead>
+            <tr style={{ background: "#f8fafc", borderBottom: "1px solid #eef1f6" }}>
+              {listFields.map((f) => (<th key={f.key} style={thStyle}>{f.label}</th>))}
+              <th style={{ ...thStyle, textAlign: "right" }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, ri) => (
+              <tr key={ri} style={{ borderTop: ri === 0 ? "none" : "1px solid #f0f2f6" }}>
+                {listFields.map((f) => (<td key={f.key} style={tdStyle}><Cell f={f} row={row} /></td>))}
+                <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>
+                  <ActionBtn onClick={() => onEdit(row)}>Edit</ActionBtn>
+                  <ActionBtn danger onClick={() => onDelete(row)}>Delete</ActionBtn>
+                </td>
+              </tr>
+            ))}
+            {rows.length === 0 && (
+              <tr><td colSpan={listFields.length + 1} style={{ ...tdStyle, textAlign: "center", color: "#8a909c", padding: "28px 18px" }}>Nothing here yet — click “Add {entity.singular}”.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
+function Dashboard({ counts, go }: { counts: Record<string, number>; go: (s: SectionKey) => void }) {
+  const cards: { key: SectionKey; label: string }[] = [
+    { key: "mc", label: "MC Members" },
+    { key: "areas", label: "Functional Areas" },
+    { key: "lcs", label: "Local Committees" },
+    { key: "lcmembers", label: "LC Board Members" },
+    { key: "resources", label: "Resources" },
+    { key: "events", label: "Events" },
+    { key: "news", label: "News Posts" },
+  ];
+  return (
+    <>
+      <div style={{ marginBottom: 22 }}>
+        <h2 style={{ color: "#0d1b3e", fontWeight: 900, fontSize: 24, margin: "0 0 4px", letterSpacing: "-0.02em" }}>Dashboard</h2>
+        <p style={{ color: "#52565e", fontSize: 14, margin: 0 }}>Overview of all CzechHub content. Click a card to manage it.</p>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
         {cards.map((c) => (
           <button
             key={c.key}
@@ -165,147 +177,85 @@ function Dashboard({ go }: { go: (s: SectionKey) => void }) {
             onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 1px 3px rgba(13,27,62,0.05)"; e.currentTarget.style.borderColor = "#e7ebf2"; }}
           >
             <div style={{ color: COLORS.blue, marginBottom: 12 }}><Icon name={c.key} /></div>
-            <div style={{ color: "#0d1b3e", fontWeight: 900, fontSize: 32, lineHeight: 1, letterSpacing: "-0.02em" }}>{c.count}</div>
+            <div style={{ color: "#0d1b3e", fontWeight: 900, fontSize: 32, lineHeight: 1, letterSpacing: "-0.02em" }}>{counts[c.key]}</div>
             <div style={{ color: "#8a909c", fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", marginTop: 6 }}>{c.label}</div>
           </button>
         ))}
       </div>
-
-      <h3 style={{ color: "#0d1b3e", fontWeight: 900, fontSize: 17, margin: "0 0 14px" }}>Upcoming events</h3>
-      <Table
-        head={["Event", "Date", "Location", "Type"]}
-        rows={upcoming.map((e) => [
-          <span key="n" style={{ fontWeight: 700 }}>{e.name}</span>,
-          fmtDate(e.date),
-          e.location,
-          <Badge key="t" label={e.type} color={TYPE_COLORS[e.type] || COLORS.blue} />,
-        ])}
-      />
     </>
   );
 }
 
-function SectionHeaderLite({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div style={{ marginBottom: 22 }}>
-      <h2 style={{ color: "#0d1b3e", fontWeight: 900, fontSize: 24, margin: "0 0 4px", letterSpacing: "-0.02em" }}>{title}</h2>
-      <p style={{ color: "#52565e", fontSize: 14, margin: 0 }}>{subtitle}</p>
-    </div>
-  );
-}
-
-function Content({ section, go }: { section: SectionKey; go: (s: SectionKey) => void }) {
-  if (section === "dashboard") return <Dashboard go={go} />;
-
-  if (section === "mc") {
-    return (
-      <>
-        <SectionHeader title="MC Board" subtitle="National Managing Committee members." addLabel="Add member" />
-        <ReadOnlyNotice />
-        <Table
-          head={["Name", "Role", "Area", "LinkedIn"]}
-          rows={MC_MEMBERS.map((m) => [
-            <span key="n" style={{ fontWeight: 700 }}>{m.name}</span>,
-            <Badge key="r" label={m.role} color={m.role === "MCP" ? COLORS.blue : areaColor(m.area)} />,
-            m.area,
-            <a key="l" href={m.linkedin} target="_blank" rel="noreferrer" style={{ color: COLORS.blue, textDecoration: "none", fontWeight: 600 }}>Profile ↗</a>,
-          ])}
-        />
-      </>
-    );
-  }
-
-  if (section === "lcs") {
-    return (
-      <>
-        <SectionHeader title="Local Committees" subtitle="The five Czech local committees." addLabel="Add LC" />
-        <ReadOnlyNotice />
-        <Table
-          head={["Name", "City", "University", "President", "EB"]}
-          rows={LCS.map((l) => [
-            <span key="n" style={{ fontWeight: 700 }}>{l.name}</span>,
-            l.city,
-            <span key="u" style={{ color: "#52565e" }}>{l.university}</span>,
-            l.lcp,
-            `${(LC_EB[l.slug] || []).length} members`,
-          ])}
-        />
-      </>
-    );
-  }
-
-  if (section === "areas") {
-    return (
-      <>
-        <SectionHeader title="Functional Areas" subtitle="The seven functional areas." addLabel="Add area" />
-        <ReadOnlyNotice />
-        <Table
-          head={["Code", "Name", "MCVP Lead"]}
-          rows={AREAS.map((a) => [
-            <span key="c" style={{ display: "inline-block", border: `1.5px solid ${areaColor(a.code)}`, color: areaColor(a.code), fontWeight: 800, fontSize: 12, padding: "3px 9px", borderRadius: 7, letterSpacing: "0.04em" }}>{a.code}</span>,
-            <span key="n" style={{ fontWeight: 700 }}>{a.name}</span>,
-            a.mcvp,
-          ])}
-        />
-      </>
-    );
-  }
-
-  if (section === "resources") {
-    return (
-      <>
-        <SectionHeader title="Resources" subtitle="Documents, tools and templates." addLabel="Add resource" />
-        <ReadOnlyNotice />
-        <Table
-          head={["Resource", "Category", "Type"]}
-          rows={RESOURCES.map((r) => [
-            <span key="l" style={{ fontWeight: 700 }}>{r.label}</span>,
-            r.cat,
-            <Badge key="t" label={r.type} color={COLORS.gray} />,
-          ])}
-        />
-      </>
-    );
-  }
-
-  if (section === "events") {
-    return (
-      <>
-        <SectionHeader title="Events" subtitle="Conferences, trainings and deadlines." addLabel="Add event" />
-        <ReadOnlyNotice />
-        <Table
-          head={["Event", "Date", "Location", "Type"]}
-          rows={EVENTS.map((e) => [
-            <span key="n" style={{ fontWeight: 700 }}>{e.name}</span>,
-            e.date === e.end ? fmtDate(e.date) : `${fmtDate(e.date)} – ${fmtDate(e.end)}`,
-            e.location,
-            <Badge key="t" label={e.type} color={TYPE_COLORS[e.type] || COLORS.blue} />,
-          ])}
-        />
-      </>
-    );
-  }
-
-  // news
+function SettingsSection({ entity, row, onEdit }: { entity: Entity; row: Row | null; onEdit: () => void }) {
   return (
     <>
-      <SectionHeader title="News" subtitle="Announcements and updates." addLabel="Add post" />
-      <ReadOnlyNotice />
-      <Table
-        head={["Date", "Title", "Excerpt"]}
-        rows={NEWS.map((n) => [
-          <span key="d" style={{ whiteSpace: "nowrap", color: "#52565e" }}>{fmtDate(n.date)}</span>,
-          <span key="t" style={{ fontWeight: 700 }}>{n.title}</span>,
-          <span key="b" style={{ color: "#52565e", display: "inline-block", maxWidth: 360, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{n.body}</span>,
-        ])}
-      />
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap", marginBottom: 22 }}>
+        <div>
+          <h2 style={{ color: "#0d1b3e", fontWeight: 900, fontSize: 24, margin: "0 0 4px", letterSpacing: "-0.02em" }}>{entity.title}</h2>
+          <p style={{ color: "#52565e", fontSize: 14, margin: 0 }}>{entity.subtitle}</p>
+        </div>
+        <button onClick={onEdit} style={{ border: "none", background: COLORS.blue, color: "#fff", fontSize: 13.5, fontWeight: 800, padding: "11px 18px", borderRadius: 10, cursor: "pointer", boxShadow: "0 6px 16px rgba(3,126,243,0.28)" }}>
+          Edit settings
+        </button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 14 }}>
+        {entity.fields.map((f) => (
+          <div key={f.key} style={{ background: "#fff", border: "1px solid #e7ebf2", borderRadius: 12, padding: "14px 16px", boxShadow: "0 1px 3px rgba(13,27,62,0.05)" }}>
+            <div style={{ color: "#8a909c", fontSize: 11, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>{f.label}</div>
+            <div style={{ color: "#0d1b3e", fontSize: 16, fontWeight: 700 }}>{row && row[f.key] != null && row[f.key] !== "" ? String(row[f.key]) : <span style={{ color: "#c2c8d4" }}>—</span>}</div>
+          </div>
+        ))}
+      </div>
     </>
   );
 }
 
 export default function AdminShell({ onLogout }: { onLogout: () => void }) {
   const [section, setSection] = useState<SectionKey>("dashboard");
+  const [editor, setEditor] = useState<{ entity: Entity; row: Row | null } | null>(null);
+
+  const collections = {
+    mc: useCollection<Row>("mc_members", MC_MEMBERS as unknown as Row[], "sort"),
+    lcs: useCollection<Row>("lcs", LCS as unknown as Row[], "sort"),
+    lcmembers: useCollection<Row>("lc_members", LC_MEMBERS_FLAT as unknown as Row[], "sort"),
+    resources: useCollection<Row>("resources", RESOURCES as unknown as Row[], "sort"),
+    events: useCollection<Row>("events", EVENTS as unknown as Row[], "date"),
+    news: useCollection<Row>("news", NEWS as unknown as Row[], "date", false),
+  };
+
+  const settingsCol = useCollection<Row>("settings", [{ id: 1, ...SETTINGS_DEFAULTS }] as unknown as Row[], "id");
+  const settingsRow = settingsCol.data[0] ?? null;
+
+  // Functional Areas are the MCVPs (with a department), ordered by board sort.
+  const areaRows = collections.mc.data.filter(
+    (m) => String(m.role) === "MCVP" && String(m.area ?? "").trim() !== ""
+  );
+
+  const optionSources = Object.fromEntries(
+    SECTIONS.map((k) => [k, collections[k].data])
+  ) as Record<EntityKey, Row[]>;
+
+  const counts: Record<string, number> = {
+    ...Object.fromEntries(SECTIONS.map((k) => [k, collections[k].data.length])),
+    areas: areaRows.length,
+  };
+
+  const configured = isSupabaseConfigured();
   const title = NAV.find((n) => n.key === section)?.label ?? "Admin";
+
+  // Refresh whichever loaded collection owns a given table (settings and the
+  // Functional Areas view both live in already-tracked tables).
+  const refreshByTable = (table: string) => {
+    if (table === SETTINGS_ENTITY.table) return settingsCol.refresh();
+    for (const k of SECTIONS) if (ENTITIES[k].table === table) return collections[k].refresh();
+  };
+
+  const handleDelete = async (entity: Entity, row: Row) => {
+    if (!window.confirm(`Delete this ${entity.singular}? This cannot be undone.`)) return;
+    const res = await adminMutate({ table: entity.table, action: "delete", id: row[entity.idField] as string | number });
+    if (!res.ok) { window.alert(res.error || "Delete failed."); return; }
+    refreshByTable(entity.table);
+  };
 
   return (
     <div className="admin-shell" style={{ minHeight: "100vh", display: "flex", background: "#f5f7fb" }}>
@@ -328,23 +278,7 @@ export default function AdminShell({ onLogout }: { onLogout: () => void }) {
               <button
                 key={n.key}
                 onClick={() => setSection(n.key)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  width: "100%",
-                  textAlign: "left",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "11px 14px",
-                  borderRadius: 10,
-                  fontSize: 14,
-                  fontWeight: active ? 800 : 600,
-                  color: active ? "#fff" : "rgba(255,255,255,0.62)",
-                  background: active ? COLORS.blue : "transparent",
-                  whiteSpace: "nowrap",
-                  transition: "background 0.15s, color 0.15s",
-                }}
+                style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", textAlign: "left", border: "none", cursor: "pointer", padding: "11px 14px", borderRadius: 10, fontSize: 14, fontWeight: active ? 800 : 600, color: active ? "#fff" : "rgba(255,255,255,0.62)", background: active ? COLORS.blue : "transparent", whiteSpace: "nowrap", transition: "background 0.15s, color 0.15s" }}
               >
                 <Icon name={n.key} />
                 {n.label}
@@ -360,19 +294,57 @@ export default function AdminShell({ onLogout }: { onLogout: () => void }) {
           <h1 style={{ color: "#0d1b3e", fontWeight: 900, fontSize: 18, margin: 0, letterSpacing: "-0.01em" }}>{title}</h1>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <Link href="/" style={{ color: "#52565e", fontSize: 13.5, fontWeight: 700, textDecoration: "none", padding: "8px 14px", borderRadius: 9, border: "1px solid #e2e7f0" }}>View site ↗</Link>
-            <button
-              onClick={onLogout}
-              style={{ border: "none", background: "#0d1b3e", color: "#fff", fontSize: 13.5, fontWeight: 700, padding: "9px 16px", borderRadius: 9, cursor: "pointer" }}
-            >
-              Log out
-            </button>
+            <button onClick={onLogout} style={{ border: "none", background: "#0d1b3e", color: "#fff", fontSize: 13.5, fontWeight: 700, padding: "9px 16px", borderRadius: 9, cursor: "pointer" }}>Log out</button>
           </div>
         </header>
 
         <main style={{ padding: 28, maxWidth: 1100, width: "100%" }}>
-          <Content section={section} go={setSection} />
+          {!configured && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 12, padding: "12px 16px", marginBottom: 22 }}>
+              <span style={{ fontSize: 18 }}>⚠️</span>
+              <span style={{ color: "#9a3412", fontSize: 13.5, lineHeight: 1.5 }}>
+                <strong>Supabase not configured.</strong> Add your keys to <code>.env.local</code> and restart the dev server to load and save live data. Showing seed data for now.
+              </span>
+            </div>
+          )}
+
+          {section === "dashboard" ? (
+            <Dashboard counts={counts} go={setSection} />
+          ) : section === "settings" ? (
+            <SettingsSection
+              entity={SETTINGS_ENTITY}
+              row={settingsRow}
+              onEdit={() => setEditor({ entity: SETTINGS_ENTITY, row: settingsRow })}
+            />
+          ) : section === "areas" ? (
+            <EntitySection
+              entity={AREA_ADMIN_ENTITY}
+              rows={areaRows}
+              onAdd={() => setEditor({ entity: AREA_ADMIN_ENTITY, row: null })}
+              onEdit={(row) => setEditor({ entity: AREA_ADMIN_ENTITY, row })}
+              onDelete={(row) => handleDelete(AREA_ADMIN_ENTITY, row)}
+            />
+          ) : (
+            <EntitySection
+              entity={ENTITIES[section]}
+              rows={collections[section].data}
+              onAdd={() => setEditor({ entity: ENTITIES[section], row: null })}
+              onEdit={(row) => setEditor({ entity: ENTITIES[section], row })}
+              onDelete={(row) => handleDelete(ENTITIES[section], row)}
+            />
+          )}
         </main>
       </div>
+
+      {editor && (
+        <EntityEditor
+          entity={editor.entity}
+          initial={editor.row}
+          optionSources={optionSources}
+          onClose={() => setEditor(null)}
+          onSaved={() => refreshByTable(editor.entity.table)}
+        />
+      )}
 
       <style>{`
         @media (max-width: 860px) {

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { Silhouette } from "@/components/ui";
+import SocialLinks from "@/components/SocialLinks";
 import { areaColor, COLORS } from "@/lib/theme";
 
 type ModalMember = {
@@ -9,7 +10,12 @@ type ModalMember = {
   role: string;
   area: string;
   bio?: string;
+  email?: string;
   linkedin?: string;
+  instagram?: string;
+  facebook?: string;
+  twitter?: string;
+  tiktok?: string;
 };
 
 export default function MemberModal({
@@ -163,30 +169,9 @@ export default function MemberModal({
             </p>
           )}
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            {member.linkedin && (
-              <a
-                href={member.linkedin}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "10px 20px",
-                  background: "#037ef3",
-                  color: "#fff",
-                  borderRadius: 10,
-                  fontWeight: 700,
-                  fontSize: 14,
-                  textDecoration: "none",
-                  transition: "background 0.15s",
-                }}
-              >
-                🔗 LinkedIn
-              </a>
-            )}
+            <SocialLinks socials={member} />
             <a
-              href={`mailto:${member.area?.toLowerCase() || "mc"}@aiesec.cz`}
+              href={`mailto:${member.email || `${member.area?.toLowerCase() || "mc"}@aiesec.cz`}`}
               style={{
                 display: "inline-flex",
                 alignItems: "center",

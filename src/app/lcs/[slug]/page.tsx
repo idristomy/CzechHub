@@ -9,20 +9,29 @@ import MemberModal from "@/components/MemberModal";
 import PyramidCard from "@/components/PyramidCard";
 import { Btn, PageWrapper, Section } from "@/components/ui";
 import { COLORS } from "@/lib/theme";
-import { LCS, LC_EB } from "@/lib/data";
-import type { LCMember } from "@/lib/types";
+import { LCS, LC_MEMBERS_FLAT } from "@/lib/data";
+import { useCollection } from "@/lib/useData";
+import { usePyramidConnectors } from "@/lib/usePyramidConnectors";
+import type { LC, LCMember } from "@/lib/types";
 
 export default function LcDetailPage() {
   const params = useParams();
   const slug = String(params.slug || "");
-  const lc = LCS.find((l) => l.slug === slug);
-  const eb = LC_EB[slug] || [];
+  const { data: lcs } = useCollection<LC>("lcs", LCS, "sort");
+  const { data: lcMembers } = useCollection<LCMember & { lc_slug: string }>(
+    "lc_members",
+    LC_MEMBERS_FLAT,
+    "sort"
+  );
+  const lc = lcs.find((l) => l.slug === slug);
+  const eb = lcMembers.filter((m) => m.lc_slug === slug);
   const lcp = eb.find((m) => m.role === "LCP");
   const lcvps = eb.filter((m) => m.role === "LCVP");
 
   const [mounted, setMounted] = useState(false);
   const [hovered, setHovered] = useState<number | "apex" | null>(null);
   const [selected, setSelected] = useState<{ member: LCMember; photo: string | null } | null>(null);
+  const { containerRef, apexRef, setItemRef, lines } = usePyramidConnectors(lcvps.length);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50);
     return () => clearTimeout(t);
@@ -74,46 +83,70 @@ export default function LcDetailPage() {
             <h2 style={{ color: "#fff", fontWeight: 900, fontSize: "clamp(28px,4vw,40px)", margin: 0, letterSpacing: "-0.02em" }}>Meet the {lc.city} team</h2>
           </div>
 
-          {lcp && (
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 48, position: "relative", zIndex: 2 }}>
-              <PyramidCard
-                name={lcp.name}
-                area={lcp.area}
-                role="LCP"
-                photo={null}
-                isApex
-                bio={`Leading AIESEC in ${lc.city}.`}
-                hovered={hovered === "apex"}
-                onHover={() => setHovered("apex")}
-                onLeave={() => setHovered(null)}
-                onClick={() => setSelected({ member: lcp, photo: null })}
-                animDelay={0.3}
-                mounted={mounted}
-              />
-            </div>
-          )}
+          <div ref={containerRef} style={{ position: "relative", maxWidth: 1100, margin: "0 auto" }}>
+            <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1, overflow: "visible" }}>
+              <defs>
+                <linearGradient id="lineGradLc" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#62b7ff" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="#037ef3" stopOpacity="0.3" />
+                </linearGradient>
+              </defs>
+              {lines.map((l, i) => (
+                <line
+                  key={i}
+                  x1={l.x1}
+                  y1={l.y1}
+                  x2={l.x2}
+                  y2={l.y2}
+                  stroke="url(#lineGradLc)"
+                  strokeWidth="1.5"
+                  strokeDasharray="4 4"
+                  style={{ opacity: mounted ? 0.7 : 0, transition: `opacity 0.8s ease ${0.45 + i * 0.08}s` }}
+                />
+              ))}
+            </svg>
 
-          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 16, maxWidth: 1100, margin: "0 auto", position: "relative", zIndex: 2 }}>
-            {lcvps.map((m, i) => {
-              return (
-                <div key={i} style={{ width: 190, maxWidth: "44vw" }}>
+            {lcp && (
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 48, position: "relative", zIndex: 2 }}>
+                <div ref={apexRef}>
+                  <PyramidCard
+                    name={lcp.name}
+                    area={lcp.area}
+                    role="LCP"
+                    photo={lcp.photo ?? null}
+                    isApex
+                    bio={`Leading AIESEC in ${lc.city}.`}
+                    hovered={hovered === "apex"}
+                    onHover={() => setHovered("apex")}
+                    onLeave={() => setHovered(null)}
+                    onClick={() => setSelected({ member: lcp, photo: lcp.photo ?? null })}
+                    animDelay={0.3}
+                    mounted={mounted}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 16, position: "relative", zIndex: 2 }}>
+              {lcvps.map((m, i) => (
+                <div key={i} ref={setItemRef(i)} style={{ width: 190, maxWidth: "44vw" }}>
                   <PyramidCard
                     name={m.name}
                     area={m.area}
                     role="LCVP"
-                    photo={null}
+                    photo={m.photo ?? null}
                     isApex={false}
                     hovered={hovered === i}
                     dimmed={hovered !== null && hovered !== i && hovered !== "apex"}
                     onHover={() => setHovered(i)}
                     onLeave={() => setHovered(null)}
-                    onClick={() => setSelected({ member: m, photo: null })}
+                    onClick={() => setSelected({ member: m, photo: m.photo ?? null })}
                     animDelay={0.45 + i * 0.08}
                     mounted={mounted}
                   />
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
         </div>
 

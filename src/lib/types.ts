@@ -13,9 +13,24 @@ export type Member = {
   role: "MCP" | "MCVP";
   name: string;
   area: string;
-  bio: string;
+  bio: string; // personal bio (member)
+  area_desc: string; // area description (functional area)
+  slides: string; // area slides (functional area)
   linkedin: string;
+  instagram: string;
+  facebook: string;
+  twitter: string;
+  tiktok: string;
+  email: string;
   photo: string | null;
+};
+
+export type Socials = {
+  linkedin?: string;
+  instagram?: string;
+  facebook?: string;
+  twitter?: string;
+  tiktok?: string;
 };
 
 export type LC = {
@@ -33,6 +48,14 @@ export type LCMember = {
   name: string;
   role: "LCP" | "LCVP";
   area: string;
+  bio?: string;
+  email?: string;
+  linkedin?: string;
+  instagram?: string;
+  facebook?: string;
+  twitter?: string;
+  tiktok?: string;
+  photo?: string | null;
 };
 
 export type Resource = {

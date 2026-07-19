@@ -7,10 +7,19 @@ import Footer from "@/components/Footer";
 import Hero, { HeroHighlight } from "@/components/Hero";
 import { Avatar, PageWrapper, Section, SectionHeader } from "@/components/ui";
 import { COLORS } from "@/lib/theme";
-import { LCS, LC_EB } from "@/lib/data";
+import { LCS, LC_MEMBERS_FLAT } from "@/lib/data";
+import { useCollection, groupBy } from "@/lib/useData";
+import type { LC, LCMember } from "@/lib/types";
 
 export default function LcsPage() {
   const [mounted, setMounted] = useState(false);
+  const { data: lcs } = useCollection<LC>("lcs", LCS, "sort");
+  const { data: lcMembers } = useCollection<LCMember & { lc_slug: string }>(
+    "lc_members",
+    LC_MEMBERS_FLAT,
+    "sort"
+  );
+  const eb = groupBy(lcMembers, (m) => m.lc_slug);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50);
     return () => clearTimeout(t);
@@ -30,8 +39,8 @@ export default function LcsPage() {
         <Section>
           <SectionHeader eyebrow="5 Committees" title="Find your LC" subtitle="Click a committee to meet its executive board." />
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 22 }}>
-            {LCS.map((lc, i) => {
-              const ebCount = (LC_EB[lc.slug] || []).length;
+            {lcs.map((lc, i) => {
+              const ebCount = (eb[lc.slug] || []).length;
               return (
                 <Link
                   key={lc.id}

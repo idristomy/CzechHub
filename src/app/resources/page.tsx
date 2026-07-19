@@ -7,6 +7,7 @@ import Hero, { HeroHighlight } from "@/components/Hero";
 import { PageWrapper, Section } from "@/components/ui";
 import { COLORS } from "@/lib/theme";
 import { RESOURCES } from "@/lib/data";
+import { useCollection } from "@/lib/useData";
 import type { Resource } from "@/lib/types";
 
 const TYPE_META: Record<Resource["type"], { icon: string; label: string; color: string }> = {
@@ -25,16 +26,17 @@ export default function ResourcesPage() {
     return () => clearTimeout(t);
   }, []);
 
-  const cats = useMemo(() => ["All", ...Array.from(new Set(RESOURCES.map((r) => r.cat)))], []);
+  const { data: resources } = useCollection<Resource>("resources", RESOURCES, "sort");
+  const cats = useMemo(() => ["All", ...Array.from(new Set(resources.map((r) => r.cat)))], [resources]);
   const grouped = useMemo(() => {
-    const visible = activeCat === "All" ? RESOURCES : RESOURCES.filter((r) => r.cat === activeCat);
+    const visible = activeCat === "All" ? resources : resources.filter((r) => r.cat === activeCat);
     const map = new Map<string, Resource[]>();
     for (const r of visible) {
       if (!map.has(r.cat)) map.set(r.cat, []);
       map.get(r.cat)!.push(r);
     }
     return map;
-  }, [activeCat]);
+  }, [activeCat, resources]);
 
   return (
     <>

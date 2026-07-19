@@ -25,5 +25,17 @@ export const AREA_COLORS: Record<AreaCode, string> = {
   FIN: COLORS.yellow,
 };
 
-export const areaColor = (code: string): string =>
-  (AREA_COLORS as Record<string, string>)[code] ?? COLORS.blue;
+const PALETTE = [COLORS.orange, COLORS.teal, COLORS.green, COLORS.purple, COLORS.red, COLORS.yellow, COLORS.blue];
+
+// Accepts a known code ("MKT"), a department string ("MKT & OGV" → matches its
+// first token), or any free text (deterministic palette colour as a fallback).
+export const areaColor = (code: string): string => {
+  const map = AREA_COLORS as Record<string, string>;
+  const key = String(code ?? "").trim().toUpperCase();
+  if (map[key]) return map[key];
+  const first = key.split(/[^A-Z0-9]+/).filter(Boolean)[0];
+  if (first && map[first]) return map[first];
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  return PALETTE[h % PALETTE.length];
+};

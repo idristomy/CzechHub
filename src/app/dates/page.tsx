@@ -7,6 +7,7 @@ import Hero, { HeroHighlight } from "@/components/Hero";
 import { Badge, PageWrapper, Section } from "@/components/ui";
 import { COLORS } from "@/lib/theme";
 import { EVENTS } from "@/lib/data";
+import { useCollection } from "@/lib/useData";
 import type { EventItem } from "@/lib/types";
 
 const TYPE_COLORS: Record<EventItem["type"], string> = {
@@ -34,10 +35,11 @@ export default function DatesPage() {
     return () => clearTimeout(t);
   }, []);
 
+  const { data: events } = useCollection<EventItem>("events", EVENTS, "date");
   const today = useMemo(() => new Date("2026-05-22"), []);
   const sorted = useMemo(
-    () => [...EVENTS].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-    []
+    () => [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    [events]
   );
   const visible = useMemo(
     () => (filter === "All" ? sorted : sorted.filter((e) => e.type === filter)),
@@ -160,7 +162,7 @@ export default function DatesPage() {
                     Coming soon
                   </div>
                   <p style={{ color: "#52565e", fontSize: 13, lineHeight: 1.5, margin: 0 }}>
-                    {EVENTS.length === 0
+                    {events.length === 0
                       ? "Key dates and events will be shared here soon."
                       : "No events of this type yet — more will be shared soon."}
                   </p>

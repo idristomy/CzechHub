@@ -7,10 +7,15 @@ import Footer from "@/components/Footer";
 import Hero, { HeroHighlight } from "@/components/Hero";
 import { PageWrapper, Section, SectionHeader } from "@/components/ui";
 import { areaColor } from "@/lib/theme";
-import { AREAS } from "@/lib/data";
+import { MC_MEMBERS } from "@/lib/data";
+import { useCollection } from "@/lib/useData";
+import { areasFromMembers } from "@/lib/areas";
+import type { Member } from "@/lib/types";
 
 export default function AreasPage() {
   const [mounted, setMounted] = useState(false);
+  const { data: members } = useCollection<Member>("mc_members", MC_MEMBERS, "sort");
+  const areas = areasFromMembers(members);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50);
     return () => clearTimeout(t);
@@ -22,20 +27,25 @@ export default function AreasPage() {
       <PageWrapper>
         <Hero
           eyebrow="Functional Areas"
-          title={<>The <HeroHighlight>Seven</HeroHighlight> Areas</>}
-          subtitle="Every Local Committee and the MC operate through seven functional areas. Explore what each one does across AIESEC in Czech Republic."
+          title={<>Our <HeroHighlight>Functional</HeroHighlight> Areas</>}
+          subtitle="Each MC area is led by an MCVP. Explore what each one does across AIESEC in Czech Republic."
         />
 
         {/* Grid */}
         <Section>
-          <SectionHeader eyebrow="Explore" title="All functional areas" subtitle="Click any area to see its lead and resources." />
+          <SectionHeader eyebrow="Explore" title="All functional areas" subtitle="Click any area to see its lead and materials." />
+          {areas.length === 0 ? (
+            <div style={{ background: "#f8f9fb", border: "1px dashed #d4dae6", borderRadius: 16, padding: "48px 24px", textAlign: "center", color: "#52565e", fontSize: 15 }}>
+              Areas appear here once MCVPs are added to the MC board.
+            </div>
+          ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
-            {AREAS.map((a, i) => {
-              const col = areaColor(a.code);
+            {areas.map((a, i) => {
+              const col = areaColor(a.name);
               return (
                 <Link
-                  key={a.code}
-                  href={`/areas/${a.code}`}
+                  key={a.slug}
+                  href={`/areas/${a.slug}`}
                   className="area-card"
                   style={{
                     position: "relative",
@@ -102,7 +112,7 @@ export default function AreasPage() {
                           justifyContent: "center",
                           color: "#fff",
                           fontWeight: 900,
-                          fontSize: 18,
+                          fontSize: 16,
                           letterSpacing: "0.02em",
                           boxShadow: `0 8px 20px ${col}44`,
                           transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -113,11 +123,11 @@ export default function AreasPage() {
                       </div>
                       <div style={{ fontWeight: 900, fontSize: 18, color: "#0d1b3e", lineHeight: 1.2 }}>{a.name}</div>
                     </div>
-                    <p style={{ color: "#52565e", fontSize: 14, lineHeight: 1.6, margin: "0 0 20px" }}>{a.desc}</p>
+                    {a.desc && <p style={{ color: "#52565e", fontSize: 14, lineHeight: 1.6, margin: "0 0 20px" }}>{a.desc}</p>}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid #f0f2f6", paddingTop: 16 }}>
                       <div style={{ display: "flex", flexDirection: "column" }}>
                         <span style={{ color: "#9aa0ab", fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700 }}>Led by</span>
-                        <span style={{ color: "#0d1b3e", fontSize: 14, fontWeight: 700 }}>{a.mcvp}</span>
+                        <span style={{ color: "#0d1b3e", fontSize: 14, fontWeight: 700 }}>{a.lead.name}</span>
                       </div>
                       <span style={{ color: col, fontSize: 13, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
                         View <span className="area-arrow" style={{ display: "inline-block", transition: "transform 0.3s" }}>→</span>
@@ -128,6 +138,7 @@ export default function AreasPage() {
               );
             })}
           </div>
+          )}
         </Section>
 
         <Footer />

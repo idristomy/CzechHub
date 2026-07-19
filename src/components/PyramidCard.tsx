@@ -38,7 +38,9 @@ export default function PyramidCard(props: CardProps) {
     bio,
   } = props;
   const isPresident = role === "MCP" || role === "LCP";
-  const placeholder = !photo;
+  const placeholder = !photo; // controls the silhouette / background visuals only
+  // Whether a real name has been set — drives the text, independently of the photo.
+  const named = Boolean(name && name.trim() && name.trim().toLowerCase() !== "to be announced");
   const col = props.color ?? (isPresident ? COLORS.blue : areaColor(area));
   const apexLabel = role === "MCP" ? "★ MCP" : "★ LCP";
   const vpLabel = role === "MCVP" ? "MCVP " + area : "LCVP " + area;
@@ -219,7 +221,7 @@ export default function PyramidCard(props: CardProps) {
             textOverflow: "ellipsis",
           }}
         >
-          {placeholder ? "To be announced" : name}
+          {named ? name : "To be announced"}
         </h3>
 
         <p
@@ -233,10 +235,16 @@ export default function PyramidCard(props: CardProps) {
             textOverflow: "ellipsis",
           }}
         >
-          {placeholder ? "Awaiting appointment" : isApex ? bio?.split(".")[0] + "." : "Leading " + area}
+          {!named
+            ? "Awaiting appointment"
+            : isApex
+              ? bio
+                ? bio.split(".")[0] + "."
+                : "National President"
+              : "Leading " + area}
         </p>
 
-        {!placeholder && (role === "MCP" || role === "MCVP") && (
+        {named && (role === "MCP" || role === "MCVP") && (
           <div
             style={{
               marginTop: hovered ? 10 : 0,
